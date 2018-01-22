@@ -47,6 +47,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.lat != 'number') {
       try {
         req.body.lat = parseFloat(req.body.lat);
+        if(isNaN(parseFloat(req.body.lat)) || !isFinite(req.body.lat)) {
+          errors.push('Latitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
@@ -55,6 +58,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.long != 'number') {
       try {
         req.body.long = parseFloat(req.body.long);
+        if(isNaN(parseFloat(req.body.long)) || !isFinite(req.body.long)) {
+          errors.push('Longitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
@@ -111,6 +117,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.lat != 'number') {
       try {
         req.body.lat = parseFloat(req.body.lat);
+        if(isNaN(parseFloat(req.body.lat)) || !isFinite(req.body.lat)) {
+          errors.push('Latitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
@@ -119,6 +128,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.long != 'number') {
       try {
         req.body.long = parseFloat(req.body.long);
+        if(isNaN(parseFloat(req.body.long)) || !isFinite(req.body.long)) {
+          errors.push('Longitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
