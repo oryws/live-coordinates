@@ -48,7 +48,7 @@
       <div class="row">
         <div class="medium-12 columns">
           <label>Is the place open?
-            <select v-model="state">
+            <select v-model="status">
               <option value="open">Open</option>
               <option value="closed">Closed</option>
             </select>
@@ -137,24 +137,13 @@
             } else {
               this.places.push(place);
               const index = this.modelGetPlaceIndex(place);
-              this.modelUpdateMarker(index, place);
+              this.modelAddMarker(place);
             }
           },
 
-          modelUpdatePlace: function(place) {
-            const index = this.modelGetPlaceIndex(place);
-            if(index > -1) {
-              this.places.$set(index, place);
-              this.modelUpdateMarker(index, place);
-            }
-          },
-
-          modelUpdateMarker: function(index, place) {
-            if (this.markers[index]) {
-              this.markers[index].setMap(null);
-              delete this.markers[index];
-            }
-            this.markers[index] = new google.maps.Marker({
+          modelAddMarker: function(place) {
+            this.markers[place.id] = new google.maps.Marker({
+              id: place.id,
               position: {
                 lat: place.lat,
                 lng: place.long
@@ -162,20 +151,61 @@
               map: this.map,
               title: place.name
             });
+
+            this.markers[place.id].infoWindow = new google.maps.InfoWindow({
+              content: `${place.name}<br>${place.status}`
+            });
+
+            this.markers[place.id].addListener('click', () => {
+              this.markers[place.id].infoWindow.open(map, this.markers[place.id]);
+            });
+          },
+
+          modelUpdatePlace: function(place) {
+            const index = this.modelGetPlaceIndex(place);
+            if(index > -1) {
+              this.places.$set(index, place);
+              this.modelUpdateMarker(place);
+            }
+          },
+
+          modelUpdateMarker: function(place) {
+            if (this.markers[place.id]) {
+              this.markers[index].setMap(null);
+              delete this.markers[place.id];
+            }
+
+            this.markers[place.id] = new google.maps.Marker({
+              id: place.id,
+              position: {
+                lat: place.lat,
+                lng: place.long
+              },
+              map: this.map,
+              title: place.name
+            });
+
+            this.markers[place.id].infoWindow = new google.maps.InfoWindow({
+              content: `${place.name}<br>${place.status}`
+            });
+
+            this.markers[place.id].addListener('click', () => {
+              this.markers[place.id].infoWindow.open(map, this.markers[place.id]);
+            });
           },
 
           modelDeletePlace: function(place) {
             const index = this.modelGetPlaceIndex(place);
             if(index > -1) {
               this.places.$remove(this.places[index]);
-              this.modelDeleteMarker(index);
+              this.modelDeleteMarker(place);
             }
           },
 
-          modelDeleteMarker: function(index) {
-            if (this.markers[index]) {
-              this.markers[index].setMap(null);
-              delete this.markers[index];
+          modelDeleteMarker: function(place) {
+            if (this.markers[place.id]) {
+              this.markers[place.id].setMap(null);
+              delete this.markers[place.id];
             }
           },
 
