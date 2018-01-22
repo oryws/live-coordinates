@@ -31,7 +31,7 @@
       <div class="row">
         <div class="medium-12 columns">
           <label>Enter the name of the place
-            <textarea v-model="name" placeholder="Name"></textarea>
+            <input type="text" v-model="name" placeholder="Name" />
           </label>
         </div>
       </div>
@@ -39,8 +39,8 @@
       <div class="row">
         <div class="medium-12 columns">
           <label>Enter the coordinates
-            <textarea v-model="lat" placeholder="Latitude"></textarea>
-            <textarea v-model="long" placeholder="Longitude"></textarea>
+            <input type="text" v-model="lat" placeholder="Latitude" />
+            <input type="text" v-model="long" placeholder="Longitude" />
           </label>
         </div>
       </div>
@@ -100,8 +100,9 @@
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/foundation/6.2.3/foundation.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/vue/1.0.26/vue.min.js"></script>
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script> -->
-    <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDA6gY1B6Ho32v6z3C2zPGJJdS9bOcNrPo"></script>
 
     <script type="text/javascript">
 
@@ -115,8 +116,9 @@
           long: "",
           name: "",
           status: "",
-
-          places: []
+          places: [],
+          map: {},
+          markers: {}
         },
         methods: {
           modelClearPlaces: function() {
@@ -134,20 +136,46 @@
               this.modelUpdatePlace(place);
             } else {
               this.places.push(place);
+              const index = this.modelGetPlaceIndex(place);
+              this.modelUpdateMarker(index, place);
             }
           },
 
           modelUpdatePlace: function(place) {
             const index = this.modelGetPlaceIndex(place);
             if(index > -1) {
-              this.places.$set(index, sighting);
+              this.places.$set(index, place);
+              this.modelUpdateMarker(index, place);
             }
+          },
+
+          modelUpdateMarker: function(index, place) {
+            if (this.markers[index]) {
+              this.markers[index].setMap(null);
+              delete this.markers[index];
+            }
+            this.markers[index] = new google.maps.Marker({
+              position: {
+                lat: place.lat,
+                lng: place.long
+              },
+              map: this.map,
+              title: place.name
+            });
           },
 
           modelDeletePlace: function(place) {
             const index = this.modelGetPlaceIndex(place);
             if(index > -1) {
               this.places.$remove(this.places[index]);
+              this.modelDeleteMarker(index);
+            }
+          },
+
+          modelDeleteMarker: function(index) {
+            if (this.markers[index]) {
+              this.markers[index].setMap(null);
+              delete this.markers[index];
             }
           },
 
@@ -175,6 +203,18 @@
               type: 'PUT',
               data: place
             });
+          },
+
+          initMap: function() {
+            const GDL = {lat: 20.6737883, lng: -103.3704325}
+            let center = JSON.parse(JSON.stringify(GDL));
+            if(this.places.length > 0) {
+              center = places[0];
+            }
+            this.map = new google.maps.Map(document.getElementById('map'), {
+              zoom: 11,
+              center
+            });
           }
         }
       });
@@ -193,7 +233,7 @@
         }
       }
 
-      client.subscribe('/places/', handlePlaceEvent);
+      client.subscribe('/places/events', handlePlaceEvent);
 
       //Get the current places
       $.getJSON( "/places/", function( data ) {
@@ -201,22 +241,10 @@
           vm.modelAddPlace(val);
         });
       });
+
+      vm.initMap();
     });
 
-    function initMap() {
-      const uluru = {lat: -25.363, lng: 131.044};
-      let map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 4,
-        center: uluru
-      });
-      let marker = new google.maps.Marker({
-        position: uluru,
-        map: map
-      });
-    }
-
-    </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDA6gY1B6Ho32v6z3C2zPGJJdS9bOcNrPo&callback=initMap">
     </script>
   </body>
 </html>
