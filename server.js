@@ -43,6 +43,23 @@ r.connect({}).then(conn => {
         errors.push(`You have to provide a ${req_field}`);
       }
     });
+
+    if(typeof req.body.lat != 'number') {
+      try {
+        req.body.lat = parseFloat(req.body.lat);
+      } catch (ex) {
+        errors.push(ex.message());
+      }
+    }
+
+    if(typeof req.body.long != 'number') {
+      try {
+        req.body.long = parseFloat(req.body.long);
+      } catch (ex) {
+        errors.push(ex.message());
+      }
+    }
+
     if(errors.length > 0) {
       return res.status(400).send(errors);
     }
@@ -67,7 +84,7 @@ r.connect({}).then(conn => {
     });
   });
 
-  app.get('places/:id', (req, res) => {
+  app.get('/places/:id', (req, res) => {
     r.db(dbName).table(tableName).filter({id: req.params.id}).run(conn).then(cursor => {
       return cursor.toArray();
     }).then(places => {
@@ -80,13 +97,16 @@ r.connect({}).then(conn => {
     });
   });
 
-  app.put('places/:id', (req, res) => {
+  app.put('/places/:id', (req, res) => {
     r.db(dbName).table(tableName).filter({id: req.params.id}).run(conn).then(cursor => {
       return cursor.toArray();
     }).then(places => {
       if(places.length > 0) {
         let place = places[0];
         delete req.body.id;
+
+        req.body.lat = parseFloat(req.body.lat);
+        req.body.long = parseFloat(req.body.long);
 
         r.db(dbName).table(tableName).get(place.id).update(req.body).run(conn).then(status => {
           return r.db(dbName).table(tableName).get(place.id).run(conn);
@@ -115,17 +135,17 @@ r.connect({}).then(conn => {
   r.db(dbName).table(tableName).changes().run(conn).then(cursor => {
     cursor.each((err, change) => {
       if((change.new_val) && (!change.old_val)) {
-        bayeux.getClient().publish(`/places/${change.new_val.state}`, {
+        bayeux.getClient().publish(`/places/events`, {
           type: 'created',
           place: change.new_val
         });
       } else if((change.new_val) && (change.old_val)) {
-        bayeux.getClient().publish(`/places/${change.new_val.state}`, {
+        bayeux.getClient().publish(`/places/events`, {
           type: 'updated',
           place: change.new_val
         });
       } else {
-        bayeux.getClient().publish(`/places/${change.old_val.state}`, {
+        bayeux.getClient().publish(`/places/events`, {
           type: 'removed',
           place: change.old_val
         });
