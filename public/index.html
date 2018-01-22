@@ -123,8 +123,8 @@
                       <input type="text" v-model="place.name" v-on:change="actionUpdatePlace(place)" />
                     </td>
                     <td>
-                      <input type="text" v-model.number="place.lat" v-on:change="actionUpdatePlace(place)" />
-                      <input type="text" v-model.number="place.long" v-on:change="actionUpdatePlace(place)" />
+                      <input type="text" v-model="place.lat" v-on:change="actionUpdatePlace(place)" />
+                      <input type="text" v-model="place.long" v-on:change="actionUpdatePlace(place)" />
                     </td>
                     <td>
                       <input type="text" v-model="place.status" />
@@ -236,7 +236,7 @@
 
           modelUpdateMarker: function(place) {
             if (this.markers[place.id]) {
-              this.markers[index].setMap(null);
+              this.markers[place.id].setMap(null);
               delete this.markers[place.id];
             }
 
@@ -298,7 +298,7 @@
           },
 
           actionUpdatePlace: function(place) {
-            if(place.name === "" || !this.isNumeric(place.lat) || !this.isNumeric(this.place.long)) {
+            if(place.name === "" || !this.isNumeric(place.lat) || !this.isNumeric(place.long)) {
               //Do Nothing
             } else {
               $.ajax({
