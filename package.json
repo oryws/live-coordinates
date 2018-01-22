@@ -7,5 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Ory medina",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "faye": "^1.2.4",
+    "rethinkdb": "^2.3.3",
+    "vue": "^2.5.13"
+  }
 }
