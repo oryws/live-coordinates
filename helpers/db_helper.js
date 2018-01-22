@@ -26,12 +26,12 @@ const dbHandler = {
     return new Promise((resolve, reject) => {
       console.log(`Looking for table ${tableName}`);
       r.db(dbName).tableList().contains(tableName).run(conn).then(tableExists => {
-        if(tableName) {
+        if(tableExists) {
           console.log(`Table exists, no work for me`);
           resolve(conn);
         } else {
           console.log(`Creating table ${tableName}`);
-          r.db(dbName).tableCreate(tableName).runn(conn).then(() => {
+          r.db(dbName).tableCreate(tableName).run(conn).then(() => {
             console.log(`Table ${tableName} created`);
             resolve(conn);
           }).catch(ex => reject(ex));
