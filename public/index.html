@@ -74,7 +74,7 @@
             </td>
             <td>
               <input type="text" v-model="place.lat" v-on:change="actionUpdatePlace(place)" />
-              <!-- <input type="text" v-model="place.long" v-on:change="actionUpdatePlace(place)" /> -->
+              <input type="text" v-model="place.long" v-on:change="actionUpdatePlace(place)" />
             </td>
             <td>
               <a class="alert button" v-on:click="actionDeletePlace(place)">Delete</a>
@@ -99,14 +99,16 @@
 
   $(document).foundation();
 
-  $(function(){
-    var vm = new Vue({
+  $(() => {
+    const vm = new Vue({
       el: '#app',
       data: {
         lat: "",
         long: "",
         name: "",
-        status: ""
+        status: "",
+
+        places: []
       },
       methods: {
         modelClearPlaces: function() {
@@ -128,14 +130,14 @@
         },
 
         modelUpdatePlace: function(place) {
-          var index = this.modelGetPlaceIndex(place);
+          const index = this.modelGetPlaceIndex(place);
           if(index > -1) {
             this.places.$set(index, sighting);
           }
         },
 
         modelDeletePlace: function(place) {
-          var index = this.modelGetPlaceIndex(place);
+          const index = this.modelGetPlaceIndex(place);
           if(index > -1) {
             this.places.$remove(this.places[index]);
           }
@@ -143,9 +145,6 @@
 
         // Functions to create, update and remove places
         actionCreatePlace: function() {
-          console.log('Here');
-          let place = {lat: this.lat, long: this.long, name: this.name, status: this.status}
-          console.log(place);
           $.ajax({
             url: '/places',
             type: 'POST',
@@ -174,7 +173,7 @@
 
     window.vm = vm;
 
-    var client = new Faye.Client(window.location.origin + '/faye');
+    let client = new Faye.Client(window.location.origin + '/faye');
 
     function handlePlaceEvent(data) {
       if(data.type === 'created') {
@@ -185,6 +184,15 @@
         vm.modelDeletePlace(data.place);
       }
     }
+
+    client.subscribe('/places/', handlePlaceEvent);
+
+    //Get the current places
+    $.getJSON( "/places/", function( data ) {
+      $.each(data, (key, val) => {
+        vm.modelAddPlace(val);
+      });
+    });
   });
 
   </script>
