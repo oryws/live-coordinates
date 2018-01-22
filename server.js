@@ -47,6 +47,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.lat != 'number') {
       try {
         req.body.lat = parseFloat(req.body.lat);
+        if(isNaN(parseFloat(req.body.lat)) || !isFinite(req.body.lat)) {
+          errors.push('Latitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
@@ -55,6 +58,9 @@ r.connect({}).then(conn => {
     if(typeof req.body.long != 'number') {
       try {
         req.body.long = parseFloat(req.body.long);
+        if(isNaN(parseFloat(req.body.long)) || !isFinite(req.body.long)) {
+          errors.push('Longitude must be a number');
+        }
       } catch (ex) {
         errors.push(ex.message());
       }
@@ -98,15 +104,48 @@ r.connect({}).then(conn => {
   });
 
   app.put('/places/:id', (req, res) => {
+    const req_fields = ['lat', 'long', 'name', 'status'];
+    let errors = [];
+
+    // Catch incomplete places
+    req_fields.forEach(req_field => {
+      if(typeof req.body[req_field] === 'undefined') {
+        errors.push(`You have to provide a ${req_field}`);
+      }
+    });
+
+    if(typeof req.body.lat != 'number') {
+      try {
+        req.body.lat = parseFloat(req.body.lat);
+        if(isNaN(parseFloat(req.body.lat)) || !isFinite(req.body.lat)) {
+          errors.push('Latitude must be a number');
+        }
+      } catch (ex) {
+        errors.push(ex.message());
+      }
+    }
+
+    if(typeof req.body.long != 'number') {
+      try {
+        req.body.long = parseFloat(req.body.long);
+        if(isNaN(parseFloat(req.body.long)) || !isFinite(req.body.long)) {
+          errors.push('Longitude must be a number');
+        }
+      } catch (ex) {
+        errors.push(ex.message());
+      }
+    }
+
+    if(errors.length > 0) {
+      return res.status(400).send(errors);
+    }
+
     r.db(dbName).table(tableName).filter({id: req.params.id}).run(conn).then(cursor => {
       return cursor.toArray();
     }).then(places => {
       if(places.length > 0) {
         let place = places[0];
         delete req.body.id;
-
-        req.body.lat = parseFloat(req.body.lat);
-        req.body.long = parseFloat(req.body.long);
 
         r.db(dbName).table(tableName).get(place.id).update(req.body).run(conn).then(status => {
           return r.db(dbName).table(tableName).get(place.id).run(conn);
