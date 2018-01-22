@@ -1,0 +1,11 @@
+{
+  "name": "skycatch-coordinates",
+  "version": "1.0.0",
+  "description": "Interview excercise for Skycatch",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ory medina",
+  "license": "ISC"
+}
