@@ -4,8 +4,7 @@ const dbHandler = {
   /*
    * Ensures we have a database
    */
-  createDatabase: (conn) => {
-    const dbName = process.env.DBNAME || "Skycatch";
+  createDatabase: (conn, dbName) => {
     return new Promise((resolve, reject) => {
       console.log(`Looking for database ${dbName}`);
       r.dbList().contains(dbName).run(conn).then(dbExists => {
@@ -23,18 +22,16 @@ const dbHandler = {
     });
   },
 
-  createTable: (conn) => {
-    const dbName = process.env.DBNAME || "Skycatch";
-    const tableName = process.env.TBNAME || "Coordinates";
+  createTable: (conn, dbName, tableName) => {
     return new Promise((resolve, reject) => {
       console.log(`Looking for table ${tableName}`);
       r.db(dbName).tableList().contains(tableName).run(conn).then(tableExists => {
-        if(tableName) {
+        if(tableExists) {
           console.log(`Table exists, no work for me`);
           resolve(conn);
         } else {
           console.log(`Creating table ${tableName}`);
-          r.db(dbName).tableCreate(tableName).runn(conn).then(() => {
+          r.db(dbName).tableCreate(tableName).run(conn).then(() => {
             console.log(`Table ${tableName} created`);
             resolve(conn);
           }).catch(ex => reject(ex));

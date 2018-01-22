@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -8,15 +9,272 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    <title>Hello, world!</title>
+    <style>
+      #map {
+        height: 400px;
+        width: 100%;
+      }
+    </style>
+
+    <title>Skycatch places</title>
   </head>
-  <body>
-    <h1>Hello, world!</h1>
+
+  <body id="app">
+
+    <div class="container">
+      <div class="medium-12 columns">
+        <h1>Skycatch places</h1>
+      </div>
+    </div>
+
+    <form class="container">
+      <div class="row">
+        <div class="medium-12 columns">
+          <label>Enter the name of the place
+            <input type="text" v-model="name" placeholder="Name" />
+          </label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="medium-12 columns">
+          <label>Enter the coordinates
+            <input type="text" v-model="lat" placeholder="Latitude" />
+            <input type="text" v-model="long" placeholder="Longitude" />
+          </label>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="medium-12 columns">
+          <label>Is the place open?
+            <select v-model="status">
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+            </select>
+          </label>
+
+          <a href="#" class="success button" v-on:click="actionCreatePlace()">Submit</a>
+        </div>
+      </div>
+    </form>
+
+    <div id="map"></div>
+
+    <div class="row" v-show="places.length > 0">
+      <div class="medium-12 columns">
+        <h2>Places List</h2>
+      </div>
+      <div class="medium-12 columns">
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Coordinates</th>
+              <th width="150">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="place in places">
+              <td>
+                <input type="text" v-model="place.name" v-on:change="actionUpdatePlace(place)" />
+              </td>
+              <td>
+                <input type="text" v-model="place.lat" v-on:change="actionUpdatePlace(place)" />
+                <input type="text" v-model="place.long" v-on:change="actionUpdatePlace(place)" />
+              </td>
+              <td>
+                <a class="alert button" v-on:click="actionDeletePlace(place)">Delete</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="/faye/client.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/foundation/6.2.3/foundation.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/vue/1.0.26/vue.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDA6gY1B6Ho32v6z3C2zPGJJdS9bOcNrPo"></script>
+
+    <script type="text/javascript">
+
+    $(document).foundation();
+
+    $(() => {
+      const vm = new Vue({
+        el: '#app',
+        data: {
+          lat: "",
+          long: "",
+          name: "",
+          status: "",
+          places: [],
+          map: {},
+          markers: {}
+        },
+        methods: {
+          modelClearPlaces: function() {
+            this.places = [];
+          },
+
+          modelGetPlaceIndex: function(place) {
+            return _.findIndex(this.places, function(candidate) {
+              return candidate.id === place.id;
+            });
+          },
+
+          modelAddPlace: function(place) {
+            if(this.modelGetPlaceIndex(place) > -1) {
+              this.modelUpdatePlace(place);
+            } else {
+              this.places.push(place);
+              const index = this.modelGetPlaceIndex(place);
+              this.modelAddMarker(place);
+            }
+          },
+
+          modelAddMarker: function(place) {
+            this.markers[place.id] = new google.maps.Marker({
+              id: place.id,
+              position: {
+                lat: place.lat,
+                lng: place.long
+              },
+              map: this.map,
+              title: place.name
+            });
+
+            this.markers[place.id].infoWindow = new google.maps.InfoWindow({
+              content: `${place.name}<br>${place.status}`
+            });
+
+            this.markers[place.id].addListener('click', () => {
+              this.markers[place.id].infoWindow.open(map, this.markers[place.id]);
+            });
+          },
+
+          modelUpdatePlace: function(place) {
+            const index = this.modelGetPlaceIndex(place);
+            if(index > -1) {
+              this.places.$set(index, place);
+              this.modelUpdateMarker(place);
+            }
+          },
+
+          modelUpdateMarker: function(place) {
+            if (this.markers[place.id]) {
+              this.markers[index].setMap(null);
+              delete this.markers[place.id];
+            }
+
+            this.markers[place.id] = new google.maps.Marker({
+              id: place.id,
+              position: {
+                lat: place.lat,
+                lng: place.long
+              },
+              map: this.map,
+              title: place.name
+            });
+
+            this.markers[place.id].infoWindow = new google.maps.InfoWindow({
+              content: `${place.name}<br>${place.status}`
+            });
+
+            this.markers[place.id].addListener('click', () => {
+              this.markers[place.id].infoWindow.open(map, this.markers[place.id]);
+            });
+          },
+
+          modelDeletePlace: function(place) {
+            const index = this.modelGetPlaceIndex(place);
+            if(index > -1) {
+              this.places.$remove(this.places[index]);
+              this.modelDeleteMarker(place);
+            }
+          },
+
+          modelDeleteMarker: function(place) {
+            if (this.markers[place.id]) {
+              this.markers[place.id].setMap(null);
+              delete this.markers[place.id];
+            }
+          },
+
+          // Functions to create, update and remove places
+          actionCreatePlace: function() {
+            $.ajax({
+              url: '/places',
+              type: 'POST',
+              data: {lat: this.lat, long: this.long, name: this.name, status: this.status}
+            });
+          },
+
+          actionDeletePlace: function(place) {
+            $.ajax({
+              url: '/places/' + place.id,
+              type: 'DELETE'
+            }).done(function(data) {
+              // At some point, remove from the list
+            });
+          },
+
+          actionUpdatePlace: function(place) {
+            $.ajax({
+              url: '/places/' + place.id,
+              type: 'PUT',
+              data: place
+            });
+          },
+
+          initMap: function() {
+            const GDL = {lat: 20.6737883, lng: -103.3704325}
+            let center = JSON.parse(JSON.stringify(GDL));
+            if(this.places.length > 0) {
+              center = places[0];
+            }
+            this.map = new google.maps.Map(document.getElementById('map'), {
+              zoom: 11,
+              center
+            });
+          }
+        }
+      });
+
+      window.vm = vm;
+
+      let client = new Faye.Client(window.location.origin + '/faye');
+
+      function handlePlaceEvent(data) {
+        if(data.type === 'created') {
+          vm.modelAddPlace(data.place);
+        } else if(data.type === 'updated') {
+          vm.modelUpdatePlace(data.place);
+        } else if(data.type === 'removed') {
+          vm.modelDeletePlace(data.place);
+        }
+      }
+
+      client.subscribe('/places/events', handlePlaceEvent);
+
+      //Get the current places
+      $.getJSON( "/places/", function( data ) {
+        $.each(data, (key, val) => {
+          vm.modelAddPlace(val);
+        });
+      });
+
+      vm.initMap();
+    });
+
+    </script>
   </body>
 </html>
