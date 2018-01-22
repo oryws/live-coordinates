@@ -11,6 +11,7 @@ const dbHelper = require('./helpers/db_helper');
 
 const dbName = process.env.DBNAME || 'Skycatch';
 const tableName = process.env.TBNAME || 'Places'
+const port = process.env.PORT || 3000
 
 // Set bayeux (server?)
 let bayeux = new faye.NodeAdapter({mount: '/faye', timeout: 60});
@@ -20,7 +21,8 @@ bayeux.attach(server);
 app.use(express.static('public'));
 
 // Parse because why not
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json());
 
 // Connecting to rethink
 r.connect({}).then(conn => {
@@ -37,7 +39,7 @@ r.connect({}).then(conn => {
 
     // Catch incomplete places
     req_fields.forEach(req_field => {
-      if(!req.body[req_field]) {
+      if(typeof req.body[req_field] === 'undefined') {
         errors.push(`You have to provide a ${req_field}`);
       }
     });
@@ -134,3 +136,7 @@ r.connect({}).then(conn => {
   return conn;
 
 }).catch(ex => console.log(ex));
+
+server.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
