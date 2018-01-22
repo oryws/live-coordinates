@@ -298,11 +298,15 @@
           },
 
           actionUpdatePlace: function(place) {
-            $.ajax({
-              url: '/places/' + place.id,
-              type: 'PUT',
-              data: place
-            });
+            if(place.name === "" || !this.isNumeric(place.lat) || !this.isNumeric(this.place.long)) {
+              //Do Nothing
+            } else {
+              $.ajax({
+                url: '/places/' + place.id,
+                type: 'PUT',
+                data: place
+              });
+            }
           },
 
           initMap: function() {
