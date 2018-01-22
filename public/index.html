@@ -1,22 +1,194 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>Hello, world!</title>
-  </head>
-  <body>
-    <h1>Hello, world!</h1>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+    crossorigin="anonymous">
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
+  <title>Skycatch places</title>
+</head>
+
+<body id="app">
+
+  <div class="container">
+    <div class="medium-12 columns">
+      <h1>Skycatch places</h1>
+    </div>
+  </div>
+
+  <form class="container">
+    <div class="row">
+      <div class="medium-12 columns">
+        <label>Enter the name of the place
+          <textarea v-model="name" placeholder="Name"></textarea>
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="medium-12 columns">
+        <label>Enter the coordinates
+          <textarea v-model="lat" placeholder="Latitude"></textarea>
+          <textarea v-model="long" placeholder="Longitude"></textarea>
+        </label>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="medium-12 columns">
+        <label>Is the place open?
+          <select v-model="state">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </label>
+
+        <a href="#" class="success button" v-on:click="actionCreatePlace()">Submit</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="row" v-show="places.length > 0">
+    <div class="medium-12 columns">
+      <h2>Places List</h2>
+    </div>
+    <div class="medium-12 columns">
+
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Coordinates</th>
+            <th width="150">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="place in places">
+            <td>
+              <input type="text" v-model="place.name" v-on:change="actionUpdatePlace(place)" />
+            </td>
+            <td>
+              <input type="text" v-model="place.lat" v-on:change="actionUpdatePlace(place)" />
+              <!-- <input type="text" v-model="place.long" v-on:change="actionUpdatePlace(place)" /> -->
+            </td>
+            <td>
+              <a class="alert button" v-on:click="actionDeletePlace(place)">Delete</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Optional JavaScript -->
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script type="text/javascript" src="/faye/client.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.14.1/lodash.min.js"></script>
+  <script type="text/javascript" src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/foundation/6.2.3/foundation.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/vue/1.0.26/vue.min.js"></script>
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script> -->
+  <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script> -->
+
+  <script type="text/javascript">
+
+  $(document).foundation();
+
+  $(function(){
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        lat: "",
+        long: "",
+        name: "",
+        status: ""
+      },
+      methods: {
+        modelClearPlaces: function() {
+          this.places = [];
+        },
+
+        modelGetPlaceIndex: function(place) {
+          return _.findIndex(this.places, function(candidate) {
+            return candidate.id === place.id;
+          });
+        },
+
+        modelAddPlace: function(place) {
+          if(this.modelGetPlaceIndex(place) > -1) {
+            this.modelUpdatePlace(place);
+          } else {
+            this.places.push(place);
+          }
+        },
+
+        modelUpdatePlace: function(place) {
+          var index = this.modelGetPlaceIndex(place);
+          if(index > -1) {
+            this.places.$set(index, sighting);
+          }
+        },
+
+        modelDeletePlace: function(place) {
+          var index = this.modelGetPlaceIndex(place);
+          if(index > -1) {
+            this.places.$remove(this.places[index]);
+          }
+        },
+
+        // Functions to create, update and remove places
+        actionCreatePlace: function() {
+          console.log('Here');
+          let place = {lat: this.lat, long: this.long, name: this.name, status: this.status}
+          console.log(place);
+          $.ajax({
+            url: '/places',
+            type: 'POST',
+            data: {lat: this.lat, long: this.long, name: this.name, status: this.status}
+          });
+        },
+
+        actionDeletePlace: function(place) {
+          $.ajax({
+            url: '/places/' + place.id,
+            type: 'DELETE'
+          }).done(function(data) {
+            // At some point, remove from the list
+          });
+        },
+
+        actionUpdatePlace: function(place) {
+          $.ajax({
+            url: '/places/' + place.id,
+            type: 'PUT',
+            data: place
+          });
+        }
+      }
+    });
+
+    window.vm = vm;
+
+    var client = new Faye.Client(window.location.origin + '/faye');
+
+    function handlePlaceEvent(data) {
+      if(data.type === 'created') {
+        vm.modelAddPlace(data.place);
+      } else if(data.type === 'updated') {
+        vm.modelUpdatePlace(data.place);
+      } else if(data.type === 'removed') {
+        vm.modelDeletePlace(data.place);
+      }
+    }
+  });
+
+  </script>
+
+</body>
+
 </html>
